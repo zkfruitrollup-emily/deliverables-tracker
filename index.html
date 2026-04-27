@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High Noon Deliverable Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #1da6df; min-height: 100vh; padding: 48px 64px 80px; color: #1a1a2e; }
+
+    /* ── HEADER ── */
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+    .month-dropdown-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+    .month-label { font-size: 12px; font-weight: 600; color: white; text-transform: uppercase; letter-spacing: 1px; }
+    .month-select {
+      background: white; border: none; border-radius: 10px; padding: 11px 36px 11px 16px;
+      font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 500; color: #1a1a2e;
+      cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); appearance: none; outline: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%231da6df' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .headline { flex: 1; text-align: center; padding: 0 40px; font-size: 48px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 3px; line-height: 1.1; text-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; min-width: 190px; }
+    .scope-info { text-align: right; }
+    .scope-info p { font-size: 12px; font-weight: 600; color: white; text-transform: uppercase; letter-spacing: 0.8px; line-height: 1.7; opacity: 0.85; }
+
+    /* ── SAVE TOOLBAR ── */
+    .save-toolbar { display: flex; align-items: center; gap: 8px; }
+    .toolbar-btn { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 12px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; color: white; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.28); }
+    .toolbar-btn.danger:hover { background: rgba(239,68,68,0.4); border-color: rgba(239,68,68,0.5); }
+    .save-status { font-size: 11px; color: rgba(134,239,172,0.9); font-weight: 500; white-space: nowrap; }
+
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: white; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 999; animation: toastIn 0.25s ease, toastOut 0.3s ease 2.2s forwards; pointer-events: none; }
+    @keyframes toastIn  { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+    /* ── INPUT BAR ── */
+    .input-section { margin-bottom: 28px; }
+    .input-main { width: 100%; background: white; border: none; border-radius: 12px; padding: 16px 24px; font-family: 'Outfit', sans-serif; font-size: 15px; color: #1a1a2e; resize: none; outline: none; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: block; line-height: 1.6; }
+    .input-main::placeholder { color: #aab0bb; }
+    .input-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+    .input-hint { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 400; }
+    .input-hint kbd { background: rgba(255,255,255,0.2); border-radius: 4px; padding: 1px 7px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; color: white; }
+    .input-right { display: flex; align-items: center; gap: 10px; }
+
+    /* Quarter selector */
+    .quarter-selector { display: flex; align-items: center; background: white; border-radius: 10px; padding: 4px; gap: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .q-pill { border-radius: 7px; padding: 7px 14px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; color: #9ca3af; cursor: pointer; transition: all 0.15s; border: none; background: none; }
+    .q-pill.active { background: #1da6df; color: white; font-weight: 700; }
+    .q-pill:not(.active):hover { background: #f3f4f6; color: #1a1a2e; }
+
+    .status-select { background: white; border: none; border-radius: 10px; padding: 11px 36px 11px 16px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500; color: #1a1a2e; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='13' height='13' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%231da6df' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; outline: none; }
+    .add-btn { background: #fdb71a; border: none; border-radius: 10px; padding: 11px 26px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; box-shadow: 0 2px 10px rgba(253,183,26,0.4); transition: transform 0.1s, box-shadow 0.1s; }
+    .add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(253,183,26,0.5); }
+    .add-btn:active { transform: translateY(0); }
+
+    /* ── STAT BOXES ── */
+    .stats-row { display: flex; gap: 20px; margin-bottom: 28px; }
+    .stat-box { flex: 1; background: white; border-radius: 16px; padding: 22px 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 9px; }
+    .stat-box.clickable { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .stat-box.clickable:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+    .stat-box.active { outline: 3px solid currentColor; }
+    .stat-header { display: flex; align-items: center; gap: 8px; }
+    .stat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .stat-title { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.9px; }
+    .stat-number { font-size: 56px; font-weight: 800; color: #1a1a2e; line-height: 1; }
+    .stat-bar { height: 4px; border-radius: 2px; width: 40px; }
+    .stat-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+    .view-list-btn { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; background: none; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; padding: 0; transition: opacity 0.15s; }
+    .view-list-btn:hover { opacity: 0.7; }
+    .view-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+    /* ── BOTTOM PANEL ── */
+    .bottom-panel { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 28px 36px; display: flex; flex-direction: column; gap: 20px; backdrop-filter: blur(8px); margin-bottom: 28px; }
+    .by-month-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .by-text { font-size: 22px; font-weight: 600; color: white; }
+    .month-pill { background: white; border-radius: 8px; padding: 6px 18px; font-size: 22px; font-weight: 700; color: #1da6df; }
+    .range-pill { background: #fdb71a; border-radius: 8px; padding: 6px 22px; font-size: 22px; font-weight: 800; color: #1a1a2e; min-width: 80px; text-align: center; transition: all 0.3s; }
+
+    /* ── HOT/COLD BAR ── */
+    .trend-labels { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .trend-side { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1px; }
+    .trend-formula { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.8px; }
+    .bar-track-wrap { position: relative; height: 40px; display: flex; align-items: center; }
+    .bar-track { width: 100%; height: 12px; border-radius: 6px; background: linear-gradient(to right, #38bdf8 0%, #7dd3fc 25%, #e2f3fd 45%, #fef9c3 50%, #fde68a 55%, #fb923c 75%, #dc2626 100%); box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); }
+    .bar-marker { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: white; border: 3px solid #1da6df; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transform: translateX(-50%); transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .bar-marker-label { position: absolute; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: white; white-space: nowrap; background: rgba(0,0,0,0.35); padding: 2px 8px; border-radius: 10px; transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; top: 0; }
+    .on-pace-notch { position: absolute; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; top: 0; }
+    .on-pace-tick { width: 2px; height: 22px; background: rgba(255,255,255,0.7); border-radius: 1px; margin-top: 14px; }
+    .on-pace-text { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; margin-top: 2px; }
+    .tick-row { display: flex; justify-content: space-between; padding: 0 2px; margin-top: 4px; }
+    .tick-label { font-size: 11px; color: rgba(255,255,255,0.55); font-weight: 500; }
+    .tick-label.center { font-weight: 700; color: rgba(255,255,255,0.85); }
+
+    /* Targets reference row */
+    .targets-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .targets-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.6px; }
+    .q-target { display: flex; align-items: center; gap: 5px; border-radius: 8px; padding: 5px 10px; }
+    .q-target.inactive { background: rgba(255,255,255,0.1); }
+    .q-target.current { background: rgba(253,183,26,0.2); border: 1px solid rgba(253,183,26,0.35); }
+    .q-target-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .q-target.inactive .q-target-label { color: rgba(255,255,255,0.4); }
+    .q-target.current .q-target-label { color: #fdb71a; }
+    .q-target-months { font-size: 11px; }
+    .q-target.inactive .q-target-months { color: rgba(255,255,255,0.35); }
+    .q-target.current .q-target-months { color: rgba(255,255,255,0.85); font-weight: 600; }
+    .targets-reset { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+    /* ── LIST PANELS ── */
+    .lists-row { display: flex; gap: 20px; align-items: flex-start; }
+    .list-panel { flex: 1; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.12); display: flex; flex-direction: column; animation: slideDown 0.25s ease; transition: outline 0.15s, box-shadow 0.15s; }
+    .list-panel.drag-over { outline: 3px dashed rgba(29,166,223,0.6); box-shadow: 0 0 0 6px rgba(29,166,223,0.08); }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .list-header { padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .list-header-left { display: flex; align-items: center; gap: 9px; }
+    .list-header-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.85); }
+    .list-header-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .list-count-badge { border-radius: 20px; padding: 3px 11px; font-size: 12px; font-weight: 700; }
+
+    /* Quarter tabs */
+    .q-tabs { display: flex; border-bottom: 1px solid #f3f4f6; flex-shrink: 0; }
+    .q-tab { padding: 9px 16px; font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; color: #9ca3af; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.15s; background: none; border-left: none; border-right: none; border-top: none; }
+    .q-tab:hover { color: #6b7280; }
+    .q-tab.active { color: #1da6df; border-bottom-color: #1da6df; font-weight: 700; }
+
+    .list-items { flex: 1; overflow-y: auto; max-height: 320px; }
+    .list-item { padding: 12px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f3f4f6; font-size: 14px; font-weight: 500; color: #1a1a2e; transition: background 0.1s; cursor: grab; user-select: none; }
+    .list-item:last-child { border-bottom: none; }
+    .list-item:hover { background: #fafafa; }
+    .list-item:active { cursor: grabbing; }
+    .list-item.dragging { opacity: 0.4; }
+    .list-item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .list-item-name { flex: 1; }
+    .list-item-q { font-size: 10px; font-weight: 700; color: #9ca3af; background: #f3f4f6; border-radius: 5px; padding: 2px 6px; flex-shrink: 0; }
+    .drag-handle { font-size: 14px; color: #d1d5db; flex-shrink: 0; cursor: grab; letter-spacing: -2px; }
+    .remove-btn { width: 22px; height: 22px; border-radius: 50%; background: #f3f4f6; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 0.15s; padding: 0; }
+    .remove-btn:hover { background: #fee2e2; }
+    .remove-btn:hover svg path { stroke: #ef4444; }
+
+    .list-empty { padding: 28px 20px; text-align: center; font-size: 14px; color: #9ca3af; font-style: italic; }
+    .list-footer { padding: 9px 20px 13px; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af; font-style: italic; flex-shrink: 0; }
+
+    /* ── CONFIRM DIALOG ── */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    .dialog { background: white; border-radius: 20px; padding: 36px 40px; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+    .dialog h2 { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 10px; }
+    .dialog p { font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 28px; }
+    .dialog-btns { display: flex; gap: 12px; justify-content: center; }
+    .dialog-cancel { background: #f3f4f6; border: none; border-radius: 10px; padding: 11px 24px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; }
+    .dialog-cancel:hover { background: #e5e7eb; }
+    .dialog-confirm { background: #ef4444; border: none; border-radius: 10px; padding: 11px 24px; font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700; color: white; cursor: pointer; }
+    .dialog-confirm:hover { background: #dc2626; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+const STORAGE_KEY = 'hn-tracker-v2';
+const SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbz_P2sCrcTYIa6Y6eyOTjAj5z8U-sFuhUKslpJgwcg9_hyjoBZMK1Bqh4hnDYC0sGI5/exec';
+
+// ── Quarter & month config ────────────────────────────
+const QUARTER_MONTHS = {
+  Q1: ['January', 'February', 'March'],
+  Q2: ['April', 'May', 'June'],
+  Q3: ['July', 'August', 'September'],
+  Q4: ['October', 'November', 'December'],
+};
+const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
+const MONTHS = Object.values(QUARTER_MONTHS).flat();
+
+function getQuarterForMonth(month) {
+  for (const [q, months] of Object.entries(QUARTER_MONTHS)) {
+    if (months.includes(month)) return q;
+  }
+  return 'Q1';
+}
+
+// Monthly cumulative targets (high end = 100% on bar)
+const MONTHLY_TARGETS = {
+  January:   { low: 11, high: 13 },
+  February:  { low: 22, high: 27 },
+  March:     { low: 34, high: 40 },
+  April:     { low: 12, high: 15 },
+  May:       { low: 24, high: 30 },
+  June:      { low: 36, high: 45 },
+  July:      { low: 12, high: 15 },
+  August:    { low: 24, high: 30 },
+  September: { low: 36, high: 45 },
+  October:   { low: 12, high: 15 },
+  November:  { low: 24, high: 30 },
+  December:  { low: 36, high: 45 },
+};
+
+// Quarter target summary for reference row
+const QUARTER_TARGETS = {
+  Q1: 'Jan 11–13 · Feb 22–27 · Mar 34–40',
+  Q2: 'Apr 12–15 · May 24–30 · Jun 36–45',
+  Q3: 'Jul 12–15 · Aug 24–30 · Sep 36–45',
+  Q4: 'Oct 12–15 · Nov 24–30 · Dec 36–45',
+};
+
+// ── Bar helpers ───────────────────────────────────────
+// Two-segment: below target high = cold side, above = hot side. High end = 100% center.
+function markerPctToBarPos(pct) {
+  const clamped = Math.max(25, Math.min(150, pct));
+  return clamped <= 100
+    ? ((clamped - 25) / 75) * 50
+    : 50 + ((clamped - 100) / 50) * 50;
+}
+
+function getTrend(pct) {
+  if (pct <= 25)  return { label: 'WAY BEHIND',   color: '#38bdf8' };
+  if (pct <= 60)  return { label: 'COLD',          color: '#7dd3fc' };
+  if (pct <= 90)  return { label: 'A LITTLE COLD', color: '#bae6fd' };
+  if (pct <= 110) return { label: 'ON PACE',       color: '#fef08a' };
+  if (pct <= 130) return { label: 'SEMI-HOT',      color: '#fb923c' };
+  if (pct <= 149) return { label: 'VERY HOT',      color: '#ef4444' };
+  return             { label: 'ON FIRE 🔥',        color: '#dc2626' };
+}
+
+// ── Persistence ───────────────────────────────────────
+function loadSaved() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch (_) {}
+  return null;
+}
+function saveToStorage(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() })); } catch (_) {}
+}
+
+// ── App ───────────────────────────────────────────────
+function App() {
+  const [selectedMonth,   setSelectedMonth]   = useState('April');
+  const [deliverables,    setDeliverables]     = useState([]);
+  const [showConfirmed,   setShowConfirmed]    = useState(false);
+  const [showPitched,     setShowPitched]      = useState(false);
+  const [showGraveyard,   setShowGraveyard]    = useState(false);
+  const [inputText,       setInputText]        = useState('');
+  const [inputStatus,     setInputStatus]      = useState('Pitched');
+  const [inputQuarter,    setInputQuarter]     = useState('Q2');
+  const [listQTab,        setListQTab]         = useState('Q1');
+  const [toast,           setToast]            = useState(null);
+  const [showClearDlg,    setShowClearDlg]     = useState(false);
+  const [loading,         setLoading]          = useState(true);
+  const [saveStatus,      setSaveStatus]       = useState('idle'); // 'idle'|'saving'|'saved'|'error'
+  const [dragItem,        setDragItem]         = useState(null);
+  const [dragOverPanel,   setDragOverPanel]    = useState(null);
+  const toastTimer   = useRef(null);
+  const importRef    = useRef(null);
+  const initialized  = useRef(false);
+  const saveDebounce = useRef(null);
+
+  // ── Load from Google Sheets on mount ─────────────────
+  useEffect(() => {
+    fetch(`/api/data?action=read&cb=${Date.now()}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.deliverables)) setDeliverables(data.deliverables);
+        if (data.selectedMonth && MONTHS.includes(data.selectedMonth)) {
+          setSelectedMonth(data.selectedMonth);
+          setInputQuarter(getQuarterForMonth(data.selectedMonth));
+        }
+        // Cache locally as a fallback
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(_) {}
+        setLoading(false);
+        setTimeout(() => { initialized.current = true; }, 300);
+      })
+      .catch(() => {
+        // Fall back to localStorage cache if Sheets is unreachable
+        try {
+          const cached = localStorage.getItem(STORAGE_KEY);
+          if (cached) {
+            const saved = JSON.parse(cached);
+            if (Array.isArray(saved.deliverables)) setDeliverables(saved.deliverables);
+            if (saved.selectedMonth && MONTHS.includes(saved.selectedMonth)) {
+              setSelectedMonth(saved.selectedMonth);
+              setInputQuarter(getQuarterForMonth(saved.selectedMonth));
+            }
+          }
+        } catch(_) {}
+        setSaveStatus('error');
+        setLoading(false);
+        setTimeout(() => { initialized.current = true; }, 300);
+      });
+  }, []);
+
+  // ── Save to Google Sheets whenever data changes ───────
+  useEffect(() => {
+    if (!initialized.current) return;
+    clearTimeout(saveDebounce.current);
+    setSaveStatus('saving');
+    saveDebounce.current = setTimeout(async () => { // 15s debounce — saves after user stops making changes
+      try {
+        const payload = { deliverables, selectedMonth };
+        // Update local cache
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch(_) {}
+        // Send to Sheets — split into chunks so large datasets fit in the URL
+        const encoded    = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        const CHUNK_SIZE = 5000;
+        if (encoded.length <= CHUNK_SIZE) {
+          const res    = await fetch(`/api/data?action=write&data=${encoded}`);
+          const result = await res.json();
+          if (result.error) throw new Error(result.error);
+        } else {
+          const chunks = [];
+          for (let i = 0; i < encoded.length; i += CHUNK_SIZE) chunks.push(encoded.slice(i, i + CHUNK_SIZE));
+          for (let i = 0; i < chunks.length; i++) {
+            const res    = await fetch(`/api/data?action=chunk&i=${i}&total=${chunks.length}&d=${encodeURIComponent(chunks[i])}`);
+            const result = await res.json();
+            if (result.error) throw new Error(result.error);
+          }
+        }
+        setSaveStatus('saved');
+      } catch(err) {
+        setSaveStatus('error');
+      }
+    }, 15000);
+  }, [deliverables, selectedMonth]);
+
+  // Sync inputQuarter when selectedMonth changes
+  useEffect(() => {
+    setInputQuarter(getQuarterForMonth(selectedMonth));
+  }, [selectedMonth]);
+
+  // Toast
+  const showToast = useCallback((msg) => {
+    clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  // ── Derived ──────────────────────────────────────────
+  const currentQuarter = getQuarterForMonth(selectedMonth);
+  const target = MONTHLY_TARGETS[selectedMonth];
+
+  const confirmedList  = useMemo(() => deliverables.filter(d => d.status === 'Confirmed'),  [deliverables]);
+  const pitchedList    = useMemo(() => deliverables.filter(d => d.status === 'Pitched'),    [deliverables]);
+  const graveyardList  = useMemo(() => deliverables.filter(d => d.status === 'Graveyard'), [deliverables]);
+
+  // Hot/cold: confirmed in current quarter vs monthly target high
+  const confirmedThisQuarter = useMemo(
+    () => confirmedList.filter(d => d.quarter === currentQuarter).length,
+    [confirmedList, currentQuarter]
+  );
+  const markerPct = target.high > 0
+    ? Math.round((confirmedThisQuarter / target.high) * 100)
+    : 100;
+  const barPos = markerPctToBarPos(markerPct);
+  const trend  = getTrend(markerPct);
+
+  const remainingCount = Math.max(0, target.high - confirmedThisQuarter);
+
+  // ── Add ──────────────────────────────────────────────
+  function handleAdd() {
+    const lines = inputText.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const items = lines.map(name => ({
+      id: crypto.randomUUID(), name, status: inputStatus, quarter: inputQuarter,
+    }));
+    setDeliverables(prev => [...prev, ...items]);
+    setInputText('');
+    showToast(`✓ Added ${items.length} deliverable${items.length > 1 ? 's' : ''} to ${inputQuarter}`);
+  }
+  function handleKeyDown(e) { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleAdd(); }
+
+  // ── Remove / Graveyard ───────────────────────────────
+  function handleRemove(id, currentStatus) {
+    if (currentStatus === 'Graveyard') {
+      // Permanently delete from graveyard
+      setDeliverables(prev => prev.filter(d => d.id !== id));
+      showToast('🗑 Permanently deleted');
+    } else {
+      // Move to graveyard
+      setDeliverables(prev => prev.map(d => d.id === id ? { ...d, status: 'Graveyard' } : d));
+      showToast('Moved to Graveyard');
+    }
+  }
+
+  // ── Drag & drop ──────────────────────────────────────
+  function handleDragStart(e, deliverable) {
+    setDragItem(deliverable);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', deliverable.id);
+  }
+  function handleDragEnd() {
+    setDragItem(null);
+    setDragOverPanel(null);
+  }
+  function handleDragOver(e, panelStatus) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverPanel(panelStatus);
+  }
+  function handleDragLeave() { setDragOverPanel(null); }
+  function handleDrop(e, targetStatus) {
+    e.preventDefault();
+    setDragOverPanel(null);
+    if (!dragItem || dragItem.status === targetStatus) { setDragItem(null); return; }
+    setDeliverables(prev => prev.map(d =>
+      d.id === dragItem.id ? { ...d, status: targetStatus } : d
+    ));
+    showToast(`Moved to ${targetStatus}`);
+    setDragItem(null);
+  }
+
+  // ── Export / Import / Clear ──────────────────────────
+  function handleExport() {
+    const data = { selectedMonth, deliverables, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `high-noon-tracker-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast('📦 Data exported!');
+  }
+  function handleImportFile(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (Array.isArray(data.deliverables)) setDeliverables(data.deliverables);
+        if (data.selectedMonth && MONTHS.includes(data.selectedMonth)) setSelectedMonth(data.selectedMonth);
+        showToast(`✓ Imported ${(data.deliverables || []).length} deliverables`);
+      } catch (_) { showToast("⚠ Couldn't read file"); }
+    };
+    reader.readAsText(file); e.target.value = '';
+  }
+  function confirmClear() {
+    setDeliverables([]); setShowConfirmed(false); setShowPitched(false); setShowGraveyard(false);
+    setShowClearDlg(false); showToast('🗑 All deliverables cleared');
+  }
+
+  const inputRows = Math.min(Math.max(inputText.split('\n').length, 1), 6);
+
+  // ── List panel component ──────────────────────────────
+  function ListPanel({ title, items, status, accentColor, badgeBg, badgeColor, titleColor, emptyMsg, footerMsg, show }) {
+    if (!show) return null;
+    const filtered = items.filter(d => d.quarter === listQTab);
+    const isDragTarget = dragOverPanel === status;
+    return (
+      <div
+        className={`list-panel${isDragTarget ? ' drag-over' : ''}`}
+        onDragOver={e => handleDragOver(e, status)}
+        onDragLeave={handleDragLeave}
+        onDrop={e => handleDrop(e, status)}
+      >
+        {/* Header */}
+        <div className="list-header" style={{ background: accentColor }}>
+          <div className="list-header-left">
+            <div className="list-header-dot" />
+            <span className="list-header-title" style={{ color: titleColor || 'white' }}>{title}</span>
+          </div>
+          <div className="list-count-badge" style={{ background: badgeBg, color: badgeColor || 'white' }}>
+            {items.length}
+          </div>
+        </div>
+
+        {/* Quarter tabs */}
+        <div className="q-tabs">
+          {QUARTERS.map(q => (
+            <button key={q} className={`q-tab${listQTab === q ? ' active' : ''}`} onClick={() => setListQTab(q)}>{q}</button>
+          ))}
+        </div>
+
+        {/* Items */}
+        <div className="list-items">
+          {filtered.length === 0
+            ? <div className="list-empty">{items.length === 0 ? emptyMsg : `No ${listQTab} deliverables`}</div>
+            : filtered.map(d => (
+                <div
+                  key={d.id}
+                  className={`list-item${dragItem?.id === d.id ? ' dragging' : ''}`}
+                  draggable
+                  onDragStart={e => handleDragStart(e, d)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <span className="drag-handle">⠿</span>
+                  <div className="list-item-dot" style={{ background: accentColor }} />
+                  <span className="list-item-name">{d.name}</span>
+                  <button className="remove-btn" onClick={() => handleRemove(d.id, d.status)} title={status === 'Graveyard' ? 'Delete permanently' : 'Move to Graveyard'}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 2L8 8M8 2L2 8" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              ))
+          }
+        </div>
+
+        {footerMsg && items.length > 0 && <div className="list-footer">{footerMsg}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* ── HEADER ── */}
+      <div className="header">
+        <div className="month-dropdown-wrap">
+          <span className="month-label">Scoped Month</span>
+          <select className="month-select" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+            {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+
+        <h1 className="headline">High Noon Deliverable Tracker</h1>
+
+        <div className="header-right">
+          <div className="scope-info">
+            <p>Scope Feb–Dec</p>
+            <p>Up to 15 posts per month</p>
+            <p>Resets each quarter</p>
+          </div>
+          <div className="save-toolbar">
+            {saveStatus === 'saving' && <span className="save-status" style={{color:'rgba(253,183,26,0.95)'}}>● Saving…</span>}
+            {saveStatus === 'saved'  && <span className="save-status">● Saved to Sheets</span>}
+            {saveStatus === 'error'  && <span className="save-status" style={{color:'rgba(239,68,68,0.9)'}}>● Offline – saved locally</span>}
+            <button className="toolbar-btn" onClick={handleExport}>↓ Export</button>
+            <button className="toolbar-btn" onClick={() => importRef.current.click()}>↑ Import</button>
+            <button className="toolbar-btn danger" onClick={() => setShowClearDlg(true)}>✕ Clear</button>
+            <input ref={importRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportFile} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── INPUT BAR ── */}
+      <div className="input-section">
+        <textarea
+          className="input-main"
+          placeholder="Insert Deliverable... (one per line)"
+          value={inputText} rows={inputRows}
+          onChange={e => setInputText(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <div className="input-controls">
+          <span className="input-hint">
+            Press <kbd>↵ Enter</kbd> to separate multiple · <kbd>⌘ Cmd+Enter</kbd> or + Add to submit
+          </span>
+          <div className="input-right">
+            {/* Quarter selector */}
+            <div className="quarter-selector">
+              {QUARTERS.map(q => (
+                <button key={q} className={`q-pill${inputQuarter === q ? ' active' : ''}`} onClick={() => setInputQuarter(q)}>{q}</button>
+              ))}
+            </div>
+            <select className="status-select" value={inputStatus} onChange={e => setInputStatus(e.target.value)}>
+              <option value="Pitched">● Pitched</option>
+              <option value="Confirmed">● Confirmed</option>
+            </select>
+            <button className="add-btn" onClick={handleAdd}>+ Add</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── STAT BOXES ── */}
+      <div className="stats-row">
+        {/* Confirmed */}
+        <div className={`stat-box clickable${showConfirmed ? ' active' : ''}`} style={{ color: '#22c55e' }} onClick={() => setShowConfirmed(v => !v)}>
+          <div className="stat-header"><div className="stat-dot" style={{ background: '#22c55e' }} /><span className="stat-title">Confirmed This Quarter</span></div>
+          <div className="stat-number">{confirmedThisQuarter}</div>
+          <div className="stat-bar" style={{ background: '#22c55e' }} />
+          <div className="stat-footer">
+            <button className="view-list-btn" style={{ color: '#22c55e' }}>{showConfirmed ? 'Hide List ↑' : 'View List ↓'}</button>
+            <div className="view-icon" style={{ background: '#f0fdf4' }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d={showConfirmed ? 'M3 10L8 6L13 10' : 'M8 3v10M3 8l5 5 5-5'} stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Pitched */}
+        <div className={`stat-box clickable${showPitched ? ' active' : ''}`} style={{ color: '#fdb71a' }} onClick={() => setShowPitched(v => !v)}>
+          <div className="stat-header"><div className="stat-dot" style={{ background: '#fdb71a' }} /><span className="stat-title">Deliverables Pitched</span></div>
+          <div className="stat-number">{pitchedList.length}</div>
+          <div className="stat-bar" style={{ background: '#fdb71a' }} />
+          <div className="stat-footer">
+            <button className="view-list-btn" style={{ color: '#fdb71a' }}>{showPitched ? 'Hide List ↑' : 'View List ↓'}</button>
+            <div className="view-icon" style={{ background: '#fffbeb' }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d={showPitched ? 'M3 10L8 6L13 10' : 'M8 3v10M3 8l5 5 5-5'} stroke="#fdb71a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Graveyard */}
+        <div className={`stat-box clickable${showGraveyard ? ' active' : ''}`} style={{ color: '#9ca3af' }} onClick={() => setShowGraveyard(v => !v)}>
+          <div className="stat-header"><div className="stat-dot" style={{ background: '#d1d5db' }} /><span className="stat-title">Deliverables Graveyard</span></div>
+          <div className="stat-number" style={{ color: '#d1d5db' }}>{graveyardList.length}</div>
+          <div className="stat-bar" style={{ background: '#d1d5db' }} />
+          <div className="stat-footer">
+            <button className="view-list-btn" style={{ color: '#9ca3af' }}>{showGraveyard ? 'Hide List ↑' : 'View List ↓'}</button>
+            <div className="view-icon" style={{ background: '#f9fafb' }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d={showGraveyard ? 'M3 10L8 6L13 10' : 'M8 3v10M3 8l5 5 5-5'} stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Remaining */}
+        <div className="stat-box">
+          <div className="stat-header"><div className="stat-dot" style={{ background: '#ef4444' }} /><span className="stat-title">Deliverables Remaining</span></div>
+          <div className="stat-number" style={{ color: remainingCount === 0 ? '#22c55e' : '#ef4444' }}>{remainingCount}</div>
+          <div className="stat-bar" style={{ background: '#ef4444' }} />
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>vs {selectedMonth} target ({target.low}–{target.high})</div>
+        </div>
+      </div>
+
+      {/* ── BY MONTH + HOT/COLD ── */}
+      <div className="bottom-panel">
+        <div className="by-month-row">
+          <span className="by-text">By</span>
+          <span className="month-pill">{selectedMonth}</span>
+          <span className="by-text">we should have</span>
+          <span className="range-pill">{target.low}–{target.high}</span>
+          <span className="by-text">confirmed deliverables</span>
+        </div>
+
+        <div>
+          <div className="trend-labels">
+            <div className="trend-side"><span>🥶</span><span>COLD</span></div>
+            <div className="trend-formula">Confirmed ÷ Monthly Target × 100</div>
+            <div className="trend-side"><span>HOT</span><span>🔥</span></div>
+          </div>
+
+          <div className="bar-track-wrap">
+            <div className="bar-track" />
+            <div className="on-pace-notch">
+              <div className="on-pace-tick" />
+            </div>
+            <div className="bar-marker-label" style={{ left: `${barPos}%` }}>
+              {confirmedThisQuarter} confirmed · {markerPct}% · {trend.label}
+            </div>
+            <div className="bar-marker" style={{ left: `${barPos}%`, borderColor: trend.color }} />
+          </div>
+
+          <div className="tick-row">
+            <span className="tick-label">25%</span>
+            <span className="tick-label">75%</span>
+            <span className="tick-label center">100% ({target.high})</span>
+            <span className="tick-label">125%</span>
+            <span className="tick-label">150%</span>
+          </div>
+        </div>
+
+        {/* Quarter targets reference */}
+        <div className="targets-row">
+          <span className="targets-label">Cumulative targets · resets each quarter →</span>
+          {QUARTERS.map(q => (
+            <div key={q} className={`q-target ${q === currentQuarter ? 'current' : 'inactive'}`}>
+              <span className="q-target-label">{q}</span>
+              <span className="q-target-months">{QUARTER_TARGETS[q]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── LIST PANELS ── */}
+      {(showConfirmed || showPitched || showGraveyard) && (
+        <div className="lists-row">
+          <ListPanel title="Confirmed Deliverables" items={confirmedList} status="Confirmed"
+            accentColor="#22c55e" badgeBg="rgba(255,255,255,0.25)" show={showConfirmed}
+            emptyMsg="No confirmed deliverables yet." footerMsg="Drag items here or use the status dropdown" />
+          <ListPanel title="Pitched Deliverables" items={pitchedList} status="Pitched"
+            accentColor="#fdb71a" badgeBg="rgba(0,0,0,0.12)" badgeColor="#1a1a2e" titleColor="#1a1a2e" show={showPitched}
+            emptyMsg="No pitched deliverables yet." footerMsg="Drag items here or add above" />
+          <ListPanel title="Graveyard" items={graveyardList} status="Graveyard"
+            accentColor="#d1d5db" badgeBg="rgba(255,255,255,0.35)" show={showGraveyard}
+            emptyMsg="Nothing graveyard'd yet." footerMsg="× permanently deletes from graveyard" />
+        </div>
+      )}
+
+      {/* ── CLEAR DIALOG ── */}
+      {showClearDlg && (
+        <div className="overlay" onClick={() => setShowClearDlg(false)}>
+          <div className="dialog" onClick={e => e.stopPropagation()}>
+            <h2>Clear all deliverables?</h2>
+            <p>This removes all {deliverables.length} deliverable{deliverables.length !== 1 ? 's' : ''} across all quarters. Export first if you want a backup.</p>
+            <div className="dialog-btns">
+              <button className="dialog-cancel" onClick={() => setShowClearDlg(false)}>Cancel</button>
+              <button className="dialog-confirm" onClick={confirmClear}>Yes, clear all</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className="toast" key={toast}>{toast}</div>}
+
+      {/* ── LOADING OVERLAY ── */}
+      {loading && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(29,166,223,0.92)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, flexDirection:'column', gap:20 }}>
+          <div style={{ width:48, height:48, border:'4px solid rgba(255,255,255,0.3)', borderTop:'4px solid white', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+          <span style={{ color:'white', fontSize:18, fontWeight:700, fontFamily:'Outfit, sans-serif', letterSpacing:1 }}>Loading from Google Sheets…</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+</script>
+</body>
+</html>
